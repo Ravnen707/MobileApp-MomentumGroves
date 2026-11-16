@@ -1,0 +1,88 @@
+# .NET / MAUI build output and package caches
+[Bb]in/
+[Oo]bj/
+artifacts/
+packages/
+.nuget/packages/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.nupkg
+*.snupkg
+
+# Rider, Visual Studio, and local editor state
+.idea/
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# Machine-specific Android / Java SDK paths
+/Directory.Build.props
+local.properties
+
+# Local databases, SQLite sidecars, and database backups
+*.db
+*.db-*
+*.db3
+*.db3-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.mdb
+*.accdb
+*.mdf
+*.ldf
+*.ndf
+*.sdf
+*.db.bak
+*.db3.bak
+*.sqlite.bak
+*.sqlite3.bak
+*.sql.bak
+*.bak
+
+# This app's private food data (including copied/exported data)
+foods.json
+foods.json.*
+
+# Local secrets and environment overrides; keep example templates
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+secrets.json
+appsettings.Local.json
+appsettings.*.Local.json
+*.pubxml
+
+# Mobile signing credentials and generated app packages
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*.apk
+*.aab
+*.apks
+*.ipa
+*.app/
+*.dSYM/
+
+# Logs, temporary files, and OS metadata
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
