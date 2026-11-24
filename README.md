@@ -13,6 +13,7 @@ De to afsnit nedenfor beskriver den samme app og opsætning. Engelsk kommer før
 - [Overview](#overview)
 - [Requirements and installation](#requirements-and-installation)
 - [PC setup and sync](#pc-setup-and-sync)
+- [Optional Supabase](#optional-supabase)
 - [Using the app](#using-the-app)
 - [Data and privacy](#data-and-privacy)
 - [Project structure](#project-structure)
@@ -61,6 +62,12 @@ Sync runs once per tap and stops when finished. Opening a screen, saving an item
 
 The phone’s `localhost` points to the phone itself. If the PC web app listens only on its own loopback address, the phone cannot connect. Both devices can still use their locally saved data. See the web project’s README for desktop setup and database initialization.
 
+### Optional Supabase
+
+The default **Standalone (local JSON)** provider works without a Supabase account. It keeps pending foods and downloaded programmes on the phone and uses manual PC sync when paired. Open **Settings** to see the active provider.
+
+Choose Supabase to read and update the shared food library and training weights while the PC is off. The full training editor and standalone PC sync still require the PC. [Optional exercise image Storage](docs/training-image-storage.md) makes training images available in cloud mode while the PC is off. The web app keeps its local Frida database. Switching providers preserves the standalone files and pending changes. Follow the [Supabase setup guide](docs/supabase-setup.md) for the web, dashboard and mobile steps.
+
 ### Using the app
 
 **Training.** Open a programme group, enter a weight in kilograms, and tap **Save weight**. Saving works offline after the first programme download. If both devices change the same exercise weight before sync, review the PC value in **Training**. Save the phone value again to use it, or discard unresolved phone edits to keep the PC values. Programme creation, exercise management, and workout history are available in **Open full editor (online)**. If the PC training page is already open after a sync, click **Reload programmes** to see the latest weights.
@@ -76,7 +83,7 @@ The phone’s `localhost` points to the phone itself. If the PC web app listens 
 | Downloaded exercise pictures | Android app cache. Android can clear cached pictures. |
 | PC address and sync key | The address is stored in app preferences. The key is stored in MAUI secure storage. |
 
-Clearing app storage or uninstalling can remove unsynced changes. The PC stores synced data in its own SQLite databases. Phone-to-PC sync sends the key in the `X-Momentum-Sync-Key` header over HTTPS. Barcode lookup sends the scanned product code to Open Food Facts over HTTPS. Manual food entry and downloaded training programmes work without that service.
+Clearing app storage or uninstalling can remove unsynced changes. The PC stores synced personal data in SQLite by default, or in PostgreSQL when configured. In cloud mode, personal data is read and written through Supabase and the sign-in session is stored in MAUI Secure Storage. Phone-to-PC sync sends the key in the `X-Momentum-Sync-Key` header over HTTPS. Barcode lookup sends the scanned product code to Open Food Facts over HTTPS. Manual food entry and downloaded training programmes work without that service.
 
 ### Project structure
 
@@ -84,12 +91,17 @@ Clearing app storage or uninstalling can remove unsynced changes. The PC stores 
 | --- | --- |
 | [`MomentumGroves.Mobile.csproj`](MomentumGroves.Mobile.csproj) | Android target, MAUI and ZXing dependencies, and asset registration. |
 | [`Views/`](Views/) | Home menu, food entry, barcode scanner, and online and offline training screens. |
-| [`src/Service/`](src/Service/) | Local storage, barcode lookup, and manual food and training sync. |
+| [`src/Service/`](src/Service/) | Barcode lookup, manual food and training sync, and Supabase authentication. |
+| [`src/Configuration/`](src/Configuration/) | Data provider selection and Supabase settings. |
+| [`src/Data/`](src/Data/) | Store contracts and their local and Supabase implementations. |
+| [`src/Infrastructure/`](src/Infrastructure/) | Supabase session persistence in MAUI Secure Storage. |
 | [`DTO/`](DTO/) | Food data and transfer models. |
 | [`Platforms/Android/`](Platforms/Android/) | Android entry points, permissions, and launcher icon settings. |
 | [`Resources/`](Resources/) | Logo, launcher assets, and splash screen. |
 
 ### Testing and publishing
+
+Run the portable NUnit examples from the mobile repository with `dotnet test .\tests\MomentumGroves.Mobile.Tests`. See the [testing notes](tests/README.md) for the test structure and ideas to extend it. The steps below exercise standalone mode.
 
 1. Save a food and change a downloaded exercise weight with the PC offline. Reopen the app and confirm both changes are still saved.
 2. Start the PC web app, choose **Sync to PC → Sync now**, and check that the food appears in the food library and the exercise weight updates in Training.
@@ -164,6 +176,10 @@ Synkroniseringen kører én gang pr. tryk og stopper, når den er færdig. Åbni
 
 Telefonens `localhost` peger på selve telefonen. Hvis webappen kun lytter på pc’ens egen loopback-adresse, kan telefonen ikke forbinde. Begge enheder kan stadig bruge deres lokalt gemte data. Se webprojektets README for pc-opsætning og initialisering af databaser.
 
+### Valgfri Supabase
+
+Standardtilstanden gemmer dine data som lokale JSON-filer og kr?ver ingen Supabase-konto. Under **Settings** kan du se den aktive datakilde. Med Supabase kan du l?se og ?ndre f?lles madvarer og tr?ningsv?gte, mens pc?en er slukket. Programeditoren og manuel pc-synkronisering kr?ver stadig pc?en. [Valgfri billedlagring i Supabase](docs/training-image-storage.md) g?r ?velsesbilleder tilg?ngelige i cloud-tilstand, mens pc?en er slukket. Frida ligger fortsat lokalt p? pc?en. Dine lokale filer og ventende ?ndringer bevares, n?r du skifter tilstand. Se [ops?tningsvejledningen](docs/supabase-setup.md).
+
 ### Brug af appen
 
 **Træning.** Åbn en programgruppe, indtast en vægt i kilogram, og tryk på **Save weight**. Du kan gemme offline efter den første download af programmerne. Hvis begge enheder ændrer vægten for den samme øvelse før synkronisering, kan du se pc’ens vægt under **Training**. Gem telefonens vægt igen for at bruge den, eller kassér de uløste ændringer på telefonen for at beholde pc’ens værdier. Oprettelse af programmer, redigering af øvelser og træningshistorik findes under **Open full editor (online)**. Hvis træningssiden allerede er åben på pc’en efter synkronisering, skal du klikke på **Reload programmes** for at se de seneste vægte.
@@ -193,6 +209,8 @@ Hvis du rydder appens lager eller afinstallerer den, kan du miste ændringer, de
 | [`Resources/`](Resources/) | Logo, appikonets grafik og startskærm. |
 
 ### Test og publicering
+
+K?r NUnit-eksemplerne med `dotnet test .\tests\MomentumGroves.Mobile.Tests`. Se [testvejledningen](tests/README.md). Trinnene nedenfor tester lokal tilstand.
 
 1. Gem en madvare, og ændr vægten for en downloadet øvelse, mens pc’en er offline. Åbn appen igen, og kontrollér, at begge ændringer stadig er gemt.
 2. Start webappen på pc’en, vælg **Sync to PC → Sync now**, og kontrollér, at varen vises i madbiblioteket, og at vægten opdateres under Training.

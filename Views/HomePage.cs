@@ -1,8 +1,10 @@
+using MomentumGroves.Mobile.Configuration;
+
 namespace MomentumGroves.Mobile.Views;
 
 public sealed class HomePage : ContentPage
 {
-    public HomePage(MainPage food, OfflineTrainingPage training, PcSyncPage syncPage)
+    public HomePage(MainPage food, OfflineTrainingPage training, PcSyncPage syncPage, DataSettingsPage settings, DataProvider provider)
     {
         Title = "Momentum Groves";
         BackgroundColor = Color.FromArgb("#101417");
@@ -28,7 +30,10 @@ public sealed class HomePage : ContentPage
                 button.IsEnabled = enabled;
         }
 
-        foreach (var (label, page) in new (string, Page)[] { ("Training", training), ("Food", food), ("Sync to PC", syncPage) })
+        var pages = new List<(string Label, Page Page)> { ("Training", training), ("Food", food) };
+        pages.Add((provider.IsCloud ? "PC settings" : "Sync to PC", syncPage));
+        pages.Add(("Settings", settings));
+        foreach (var (label, page) in pages)
         {
             var button = new Button { Text = label, BackgroundColor = Color.FromArgb(page == syncPage ? "#a6da7e" : "#27312b"), TextColor = page == syncPage ? Color.FromArgb("#101417") : Colors.White };
             buttons.Add(button);

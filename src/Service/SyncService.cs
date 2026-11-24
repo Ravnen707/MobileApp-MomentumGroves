@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Security.Cryptography;
+using MomentumGroves.Mobile.Data.Local;
 using MomentumGroves.Mobile.DTO;
 
 namespace MomentumGroves.Mobile.Service;
@@ -8,12 +9,12 @@ namespace MomentumGroves.Mobile.Service;
 /// <summary>Transfers pending foods and removes only desktop-acknowledged local entries.</summary>
 public sealed class SyncService
 {
-    private readonly LocalFoodService _storage;
+    private readonly LocalFoodStore _storage;
     private const string AddressKey = "pc_sync_address";
     private const string SecretKey = "pc_sync_secret";
     private const string FingerprintKey = "pc_sync_certificate";
 
-    public SyncService(LocalFoodService storage)
+    public SyncService(LocalFoodStore storage)
     {
         _storage = storage;
     }

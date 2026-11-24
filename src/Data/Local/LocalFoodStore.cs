@@ -1,14 +1,21 @@
 using System.Text.Json;
 using MomentumGroves.Mobile.DTO;
 
-namespace MomentumGroves.Mobile.Service;
+namespace MomentumGroves.Mobile.Data.Local;
 
 /// <summary>
 /// Stores foods in the Android application's private data directory.
 /// </summary>
-public sealed class LocalFoodService
+public sealed class LocalFoodStore : IFoodStore
 {
-    private readonly string _path = Path.Combine(FileSystem.AppDataDirectory, "foods.json");
+    private readonly string _path;
+
+    public LocalFoodStore() : this(FileSystem.AppDataDirectory)
+    {
+    }
+
+    internal LocalFoodStore(string directory) => _path = Path.Combine(directory, "foods.json");
+
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     /// <summary>
@@ -58,6 +65,8 @@ public sealed class LocalFoodService
     /// <summary>
     /// Deletes a food from local storage.
     /// </summary>
+    public Task DeleteAsync(FoodDto food) => DeleteAsync(food.Id);
+
     public async Task DeleteAsync(Guid id)
     {
         await DeleteBatchAsync(new[] {

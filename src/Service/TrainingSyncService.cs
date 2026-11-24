@@ -2,24 +2,18 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using MomentumGroves.Mobile.Data;
+using static MomentumGroves.Mobile.DTO.TrainingData;
 
 namespace MomentumGroves.Mobile.Service;
 
-public sealed class TrainingSyncService(SyncService connection)
+public sealed class TrainingSyncService(SyncService connection) : ITrainingStore
 {
     private readonly SemaphoreSlim _storageGate = new(1, 1);
     private readonly SemaphoreSlim _syncGate = new(1, 1);
     private readonly SemaphoreSlim _imageGate = new(1, 1);
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    public sealed record TrainingGroup(string Id, string Name, List<Programme> Programmes);
-    public sealed record Programme(string Id, string Title, string Subtitle, List<Exercise> Exercises);
-    public sealed record Exercise(string Id, string Name, string? Description, string? Type,
-        decimal Sets, string? Reps, decimal Kg, decimal Minutes, string? Image);
-    public sealed record Programmes(List<TrainingGroup> Groups);
-    public sealed record WeightEdit(Guid ChangeId, string ExerciseId, decimal BaseKg, decimal Kg,
-        string? Status = null);
-    public sealed record TrainingState(Programmes? Programmes, List<WeightEdit> Pending, string? Version = null);
     private sealed record WeightResult(Guid ChangeId, string Status);
     private sealed record ServerResult(Programmes Programmes, List<WeightResult> Results);
 
@@ -216,6 +210,7 @@ public sealed class TrainingSyncService(SyncService connection)
         try
         {
             var address = connection.Address;
+            var key = await connection.GetSecretAsync();
             var images = programmes.Groups.SelectMany(group => group.Programmes)
                 .SelectMany(programme => programme.Exercises)
                 .Select(exercise => ImageAddress(address, exercise.Image)).OfType<Uri>().Distinct();
@@ -229,7 +224,10 @@ public sealed class TrainingSyncService(SyncService connection)
                 var temporary = path + ".tmp";
                 try
                 {
-                    using var response = await client.GetAsync(image, HttpCompletionOption.ResponseHeadersRead, token);
+                    using var request = new HttpRequestMessage(HttpMethod.Get, image);
+                    if (!string.IsNullOrEmpty(key))
+                        request.Headers.Add("X-Momentum-Sync-Key", key);
+                    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
                     if (!response.IsSuccessStatusCode || response.Content.Headers.ContentType?.MediaType is not
                             ("image/jpeg" or "image/png" or "image/webp"))
                         continue;

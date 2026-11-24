@@ -6,6 +6,12 @@ namespace MomentumGroves.Mobile.DTO;
 public sealed class FoodDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    [System.Text.Json.Serialization.JsonIgnore]
+    public long? CloudId { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? CloudVersion { get; set; }
+
     public string Name { get; set; } = string.Empty;
     public string Unit { get; set; } = "g";
     public double Kcal { get; set; }
