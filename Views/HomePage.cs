@@ -15,10 +15,12 @@ public sealed class HomePage : ContentPage
             Spacing = 14,
             Children =
             {
-                new Label
+                new Image
                 {
-                    Text = "Momentum Groves", FontSize = 28, FontAttributes = FontAttributes.Bold,
-                    TextColor = Colors.White
+                    Source = "momentum_groves_logo.png",
+                    Aspect = Aspect.AspectFit,
+                    HeightRequest = 200,
+                    HorizontalOptions = LayoutOptions.Fill
                 }
             }
         };
