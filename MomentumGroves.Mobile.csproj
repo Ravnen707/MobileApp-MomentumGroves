@@ -15,11 +15,11 @@
         <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100"/>
-        <PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0"/>
-        <MauiIcon Include="Resources\AppIcon\appicon.svg"
-                  ForegroundFile="Resources\Images\momentum_groves_logo.png" ForegroundScale="0.72"/>
-        <MauiImage Include="Resources\Images\momentum_groves_logo.png"/>
-        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#286E58" BaseSize="128,128"/>
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
+        <PackageReference Include="Supabase" Version="8.14.0" />
+        <PackageReference Include="ZXing.Net.Maui.Controls" Version="0.4.0" />
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\Images\momentum_groves_logo.png" ForegroundScale="0.72" />
+        <MauiImage Include="Resources\Images\momentum_groves_logo.png" />
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#286E58" BaseSize="128,128" />
     </ItemGroup>
 </Project>
