@@ -20,7 +20,7 @@ public sealed class OpenFoodFactsService
     {
         if (!Regex.IsMatch(barcode, @"^\d{8,14}$"))
         {
-            throw new InvalidOperationException("Stregkoden er ikke et understøttet EAN/UPC-nummer.");
+            throw new InvalidOperationException("This barcode is not a supported EAN or UPC number.");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get,
@@ -40,7 +40,7 @@ public sealed class OpenFoodFactsService
         var name = ReadString(product, "product_name_da") ?? ReadString(product, "product_name");
         if (string.IsNullOrWhiteSpace(name) || !product.TryGetProperty("nutriments", out var nutrients))
         {
-            throw new InvalidOperationException("Produktet mangler navn eller næringsoplysninger i Open Food Facts.");
+            throw new InvalidOperationException("Open Food Facts is missing the product name or nutrition information.");
         }
 
         var kcal = ReadNumber(nutrients, "energy-kcal_100g");
@@ -55,7 +55,7 @@ public sealed class OpenFoodFactsService
         if (kcal is null || protein is null || carbs is null || fat is null)
         {
             throw new InvalidOperationException(
-                "Produktet mangler én eller flere nødvendige næringsværdier. Indtast dem manuelt.");
+                "Some required nutrition values are missing. Enter them manually.");
         }
 
         var quantity = ReadString(product, "quantity") ?? string.Empty;

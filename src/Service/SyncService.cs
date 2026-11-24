@@ -7,7 +7,8 @@ namespace MomentumGroves.Mobile.Service;
 public sealed class SyncService
 {
     private readonly LocalFoodService _storage;
-    private readonly HttpClient _client = new() { Timeout = TimeSpan.FromSeconds(15) };
+    private readonly HttpClient _client = new(new HttpClientHandler { AllowAutoRedirect = false })
+        { Timeout = TimeSpan.FromSeconds(60) };
     private const string AddressKey = "pc_sync_address";
     private const string SecretKey = "pc_sync_secret";
 
@@ -22,22 +23,49 @@ public sealed class SyncService
         set => Preferences.Set(AddressKey, value.Trim());
     }
 
-    public string Secret
+    public async Task<string> GetSecretAsync()
     {
-        get => Preferences.Get(SecretKey, "");
-        set => Preferences.Set(SecretKey, value.Trim());
-    }
-
-    public async Task<(int sent, int imported, int skipped)> TransferAsync()
-    {
-        var address = Address.Trim().TrimEnd('/');
-        if (!Uri.TryCreate(address, UriKind.Absolute, out var uri) ||
-            uri.Scheme != Uri.UriSchemeHttp || uri.Port != 5000 || string.IsNullOrWhiteSpace(Secret))
+        var secret = await SecureStorage.Default.GetAsync(SecretKey);
+        if (secret is not null)
         {
-            throw new InvalidOperationException("Indtast PC-adressen (http://IP:5000) og forbindelsesnøglen.");
+            return secret;
         }
 
+        secret = Preferences.Get(SecretKey, "");
+        if (secret.Length > 0)
+        {
+            await SaveSecretAsync(secret);
+        }
+
+        return secret;
+    }
+
+    public async Task SaveSecretAsync(string secret)
+    {
+        await SecureStorage.Default.SetAsync(SecretKey, secret.Trim());
+        Preferences.Remove(SecretKey);
+    }
+
+    public static bool IsHttpsAddress(string? address) =>
+        Uri.TryCreate(address?.Trim(), UriKind.Absolute, out var uri) &&
+        uri.Scheme == Uri.UriSchemeHttps && uri.Host.Length > 0 && uri.UserInfo.Length == 0 &&
+        uri.AbsolutePath == "/" && uri.Query.Length == 0 && uri.Fragment.Length == 0;
+
+    public async Task<(int sent, int imported, int skipped)> TransferAsync(CancellationToken token = default)
+    {
         var foods = await _storage.GetFoodsAsync();
+        if (foods.Count == 0)
+        {
+            return (0, 0, 0);
+        }
+
+        var address = Address.Trim().TrimEnd('/');
+        var secret = await GetSecretAsync();
+        if (!IsHttpsAddress(address) || secret.Length < 16)
+        {
+            throw new InvalidOperationException("Enter your PC's HTTPS address and a sync key of at least 16 characters.");
+        }
+
         var imported = 0;
         var skipped = 0;
         foreach (var batch in foods.Chunk(100))
@@ -51,27 +79,24 @@ public sealed class SyncService
             {
                 Content = JsonContent.Create(payload)
             };
-            request.Headers.TryAddWithoutValidation("X-Momentum-Sync-Key", Secret);
-            using var response = await _client.SendAsync(request);
+            request.Headers.Add("X-Momentum-Sync-Key", secret);
+            using var response = await _client.SendAsync(request, token);
             if (!response.IsSuccessStatusCode)
             {
-                throw new InvalidOperationException($"PC'en afviste overførslen (HTTP {(int)response.StatusCode}).");
+                throw new HttpRequestException(
+                    $"The PC rejected the transfer (HTTP {(int)response.StatusCode}).", null, response.StatusCode);
             }
 
-            var result = await response.Content.ReadFromJsonAsync<SyncResult>();
+            var result = await response.Content.ReadFromJsonAsync<SyncResult>(token);
             if (result?.AcknowledgedIds == null || result.AcknowledgedIds.Count != batch.Length ||
                 !result.AcknowledgedIds.ToHashSet().SetEquals(batch.Select(food => food.Id)))
             {
                 throw new InvalidOperationException(
-                    "PC'en bekræftede ikke alle fødevarer. Intet slettes fra denne overførsel.");
+                    "The PC didn't confirm every food in this batch. The batch is still saved on this phone.");
             }
 
             // The server commits the batch before acknowledging it. Retrying is safe.
-            foreach (var id in result.AcknowledgedIds)
-            {
-                await _storage.DeleteAsync(id);
-                Preferences.Remove("pc_sync_done_" + id.ToString("D"));
-            }
+            await _storage.DeleteBatchAsync(result.AcknowledgedIds);
 
             imported += result.Imported;
             skipped += result.Skipped;

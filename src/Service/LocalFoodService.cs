@@ -60,11 +60,18 @@ public sealed class LocalFoodService
     /// </summary>
     public async Task DeleteAsync(Guid id)
     {
+        await DeleteBatchAsync(new[] {
+         id });
+    }
+
+    public async Task DeleteBatchAsync(IEnumerable<Guid> ids)
+    {
+        var acknowledgedIds = ids.ToHashSet();
         await _gate.WaitAsync();
         try
         {
             var foods = await ReadAsync();
-            foods.RemoveAll(item => item.Id == id);
+            foods.RemoveAll(item => acknowledgedIds.Contains(item.Id));
             await WriteAsync(foods);
         }
         finally

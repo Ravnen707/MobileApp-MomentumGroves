@@ -19,8 +19,11 @@ public static class MauiProgram
         builder.UseBarcodeReader();
         builder.Services.AddSingleton<Service.LocalFoodService>();
         builder.Services.AddSingleton<Service.SyncService>();
+        builder.Services.AddSingleton<Service.TrainingSyncService>();
         builder.Services.AddSingleton<Service.OpenFoodFactsService>();
         builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddSingleton<OfflineTrainingPage>();
+        builder.Services.AddSingleton<HomePage>();
         return builder.Build();
     }
 }

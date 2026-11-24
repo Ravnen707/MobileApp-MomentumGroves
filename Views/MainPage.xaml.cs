@@ -14,6 +14,7 @@ public partial class MainPage : ContentPage
     private readonly OpenFoodFactsService _openFoodFacts;
     private List<FoodDto> _foods = new();
     private Guid? _editingId;
+    private bool _initialized;
 
     /// <summary>
     /// Initializes the food entry screen.
@@ -25,7 +26,6 @@ public partial class MainPage : ContentPage
         _sync = sync;
         _openFoodFacts = openFoodFacts;
         PcAddressInput.Text = _sync.Address;
-        PcSecretInput.Text = _sync.Secret;
         UnitInput.SelectedIndex = 0;
     }
 
@@ -36,6 +36,19 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
         await RefreshAsync();
+        if (!_initialized)
+        {
+            try
+            {
+                PcSecretInput.Text = await _sync.GetSecretAsync();
+            }
+            catch (Exception)
+            {
+                TransferStatus.Text = "Couldn't read the sync key. Enter and save it again.";
+            }
+
+            _initialized = true;
+        }
     }
 
     /// <summary>
@@ -46,7 +59,7 @@ public partial class MainPage : ContentPage
         var permission = await Permissions.RequestAsync<Permissions.Camera>();
         if (permission != PermissionStatus.Granted)
         {
-            await DisplayAlert("Kameraadgang", "Giv appen kameraadgang for at scanne stregkoder.", "OK");
+            await DisplayAlert("Camera access", "Allow camera access to scan barcodes.", "OK");
             return;
         }
 
@@ -55,13 +68,13 @@ public partial class MainPage : ContentPage
         {
             await Navigation.PopModalAsync();
             ScanStatus.IsVisible = true;
-            ScanStatus.Text = "Slår stregkoden op i Open Food Facts...";
+            ScanStatus.Text = "Looking up the barcode in Open Food Facts…";
             try
             {
                 var product = await _openFoodFacts.LookupAsync(barcode);
                 if (product is null)
                 {
-                    ScanStatus.Text = "Produktet blev ikke fundet. Du kan indtaste det manuelt.";
+                    ScanStatus.Text = "Product not found. You can enter it manually.";
                     return;
                 }
 
@@ -73,11 +86,11 @@ public partial class MainPage : ContentPage
                 CarbsInput.Text = product.Carbs.ToString(CultureInfo.InvariantCulture);
                 FatInput.Text = product.Fat.ToString(CultureInfo.InvariantCulture);
                 FiberInput.Text = product.Fiber?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-                ScanStatus.Text = "Felterne er udfyldt. Kontrollér værdier og enhed før du gemmer.";
+                ScanStatus.Text = "Check the nutrition values and unit before saving.";
             }
             catch (Exception ex)
             {
-                ScanStatus.Text = "Opslag mislykkedes: " + ex.Message;
+                ScanStatus.Text = "Lookup failed. " + ex.Message;
             }
         };
         await Navigation.PushModalAsync(new NavigationPage(scanner));
@@ -90,15 +103,15 @@ public partial class MainPage : ContentPage
     {
         if (string.IsNullOrWhiteSpace(NameInput.Text))
         {
-            await DisplayAlert("Manglende navn", "Indtast fødevarens navn.", "OK");
+            await DisplayAlert("Missing name", "Enter the food name.", "OK");
             return;
         }
 
         if (!TryNumber(KcalInput.Text, out var kcal) || !TryNumber(ProteinInput.Text, out var protein) ||
             !TryNumber(CarbsInput.Text, out var carbs) || !TryNumber(FatInput.Text, out var fat))
         {
-            await DisplayAlert("Ugyldige tal",
-                "Udfyld kalorier, protein, kulhydrat og fedt med tal på 0 eller derover.", "OK");
+            await DisplayAlert("Invalid values",
+                "Enter zero or a positive number for calories, protein, carbs, and fat.", "OK");
             return;
         }
 
@@ -107,7 +120,7 @@ public partial class MainPage : ContentPage
         {
             if (!TryNumber(FiberInput.Text, out var fiberValue))
             {
-                await DisplayAlert("Ugyldigt tal", "Kostfibre skal være et tal på 0 eller derover.", "OK");
+                await DisplayAlert("Invalid value", "Enter zero or a positive number for fiber.", "OK");
                 return;
             }
 
@@ -133,7 +146,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception)
         {
-            await DisplayAlert("Fejl", "Fødevaren kunne ikke gemmes på telefonen.", "OK");
+            await DisplayAlert("Error", "Couldn't save the food on this phone.", "OK");
         }
     }
 
@@ -187,11 +200,14 @@ public partial class MainPage : ContentPage
         try
         {
             _foods = await _storage.GetFoodsAsync();
+            if (_editingId is Guid id && _foods.All(food => food.Id != id))
+                ClearForm();
+
             RenderFoods();
         }
         catch (Exception)
         {
-            await DisplayAlert("Fejl", "Lokale fødevarer kunne ikke indlæses.", "OK");
+            await DisplayAlert("Error", "Couldn't load saved foods.", "OK");
         }
     }
 
@@ -210,17 +226,19 @@ public partial class MainPage : ContentPage
             var details = new Label
             {
                 Text =
-                    $"{food.Kcal:0.#} kcal · P {food.Protein:0.#} · K {food.Carbs:0.#} · F {food.Fat:0.#} pr. 100 {food.Unit}",
+                    $"{food.Kcal:0.#} kcal · P {food.Protein:0.#} · C {food.Carbs:0.#} · F {food.Fat:0.#} per 100 {food.Unit}",
                 FontSize = 12,
                 TextColor = Color.FromArgb("#9ba9ac")
             };
             var edit = new Button
             {
-                Text = "Rediger", FontSize = 12, BackgroundColor = Color.FromArgb("#34413b"), TextColor = Colors.White
+                Text = "Edit", FontSize = 12, BackgroundColor = Color.FromArgb("#34413b"), TextColor = Colors.White
             };
             edit.Clicked += (_, _) => EditFood(food);
             var delete = new Button
-                { Text = "Slet", FontSize = 12, BackgroundColor = Color.FromArgb("#5a3335"), TextColor = Colors.White };
+            {
+                Text = "Delete", FontSize = 12, BackgroundColor = Color.FromArgb("#5a3335"), TextColor = Colors.White
+            };
             delete.Clicked += async (_, _) => await DeleteFoodAsync(food);
             var actions = new HorizontalStackLayout { Spacing = 8, Children = { edit, delete } };
             var content = new VerticalStackLayout
@@ -230,7 +248,7 @@ public partial class MainPage : ContentPage
                 {
                     new Label
                     {
-                        Text = food.Name + "  • Afventer", FontAttributes = FontAttributes.Bold,
+                        Text = food.Name + "  • Pending sync", FontAttributes = FontAttributes.Bold,
                         TextColor = Colors.White
                     },
                     details, actions
@@ -266,7 +284,7 @@ public partial class MainPage : ContentPage
     /// </summary>
     private async Task DeleteFoodAsync(FoodDto food)
     {
-        if (!await DisplayAlert("Slet fødevare", $"Vil du slette {food.Name}?", "Slet", "Annuller"))
+        if (!await DisplayAlert("Delete food", $"Delete {food.Name}?", "Delete", "Cancel"))
         {
             return;
         }
@@ -283,7 +301,7 @@ public partial class MainPage : ContentPage
         }
         catch (Exception)
         {
-            await DisplayAlert("Fejl", "Fødevaren kunne ikke slettes.", "OK");
+            await DisplayAlert("Error", "Couldn't delete the food.", "OK");
         }
     }
 
@@ -312,23 +330,27 @@ public partial class MainPage : ContentPage
         ListTab.TextColor = Colors.White;
     }
 
-    /// <summary>Transfers locally saved foods to the paired desktop.</summary>
+    /// <summary>Saves pairing settings for manual sync.</summary>
     private async void TransferClicked(object sender, EventArgs e)
     {
-        _sync.Address = PcAddressInput.Text ?? "";
-        _sync.Secret = PcSecretInput.Text ?? "";
+        var address = PcAddressInput.Text?.Trim() ?? "";
+        var secret = PcSecretInput.Text?.Trim() ?? "";
+        if (!SyncService.IsHttpsAddress(address) || secret.Length < 16)
+        {
+            TransferStatus.Text = "Enter your PC's HTTPS address and a sync key of at least 16 characters.";
+            return;
+        }
+
         TransferButton.IsEnabled = false;
-        TransferStatus.Text = "Forbinder til PC...";
         try
         {
-            var result = await _sync.TransferAsync();
-            TransferStatus.Text =
-                $"Behandlet: {result.sent}. Nye på PC: {result.imported}. Allerede eksisterende: {result.skipped}.";
-            await RefreshAsync();
+            await _sync.SaveSecretAsync(secret);
+            _sync.Address = address;
+            TransferStatus.Text = "Settings saved. To transfer data, tap Sync to PC on the home screen.";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            TransferStatus.Text = "Overførsel mislykkedes: " + ex.Message;
+            TransferStatus.Text = "Couldn't save the sync settings.";
         }
         finally
         {

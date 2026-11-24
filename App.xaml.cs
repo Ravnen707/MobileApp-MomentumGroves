@@ -6,12 +6,19 @@ namespace MomentumGroves.Mobile;
 /// </summary>
 public partial class App : Application
 {
+    private readonly HomePage _homePage;
+
     /// <summary>
     /// Initializes the application.
     /// </summary>
-    public App(MainPage mainPage)
+    public App(HomePage homePage)
     {
         InitializeComponent();
-        MainPage = new NavigationPage(mainPage);
+        _homePage = homePage;
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        return new Window(new NavigationPage(_homePage));
     }
 }

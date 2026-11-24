@@ -21,7 +21,7 @@ public sealed class BarcodeScannerPage : ContentPage
     /// </summary>
     public BarcodeScannerPage()
     {
-        Title = "Scan stregkode";
+        Title = "Scan barcode";
         BackgroundColor = Color.FromArgb("#101417");
         _reader = new CameraBarcodeReaderView
         {
@@ -48,7 +48,7 @@ public sealed class BarcodeScannerPage : ContentPage
                 _reader,
                 new Label
                 {
-                    Text = "Hold stregkoden foran kameraet",
+                    Text = "Hold the barcode in front of the camera",
                     TextColor = Colors.White,
                     HorizontalTextAlignment = TextAlignment.Center,
                     Margin = new Thickness(12)

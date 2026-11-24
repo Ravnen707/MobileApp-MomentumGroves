@@ -1,54 +1,54 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MomentumGroves.Mobile.Views.MainPage" Title="Mine fødevarer" BackgroundColor="#101417">
+             x:Class="MomentumGroves.Mobile.Views.MainPage" Title="My Foods" BackgroundColor="#101417">
   <ScrollView>
     <VerticalStackLayout Padding="16,20" Spacing="14">
-      <Label Text="Mine fødevarer" FontSize="26" FontAttributes="Bold" TextColor="#eef2f1" />
+      <Label Text="My Foods" FontSize="26" FontAttributes="Bold" TextColor="#eef2f1" />
       <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-        <Button x:Name="CreateTab" Grid.Column="0" Text="Opret mine fødevarer" Clicked="ShowCreateClicked" BackgroundColor="#a6da7e" TextColor="#101417" FontSize="12" />
-        <Button x:Name="ListTab" Grid.Column="1" Text="Se mine fødevarer" Clicked="ShowListClicked" BackgroundColor="#27312b" TextColor="#eef2f1" FontSize="12" />
+        <Button x:Name="CreateTab" Grid.Column="0" Text="Add food" Clicked="ShowCreateClicked" BackgroundColor="#a6da7e" TextColor="#101417" FontSize="12" />
+        <Button x:Name="ListTab" Grid.Column="1" Text="Saved foods" Clicked="ShowListClicked" BackgroundColor="#27312b" TextColor="#eef2f1" FontSize="12" />
       </Grid>
       <VerticalStackLayout x:Name="CreatePanel" Spacing="12">
         <Border Stroke="#303a40" BackgroundColor="#1a2025" StrokeShape="RoundRectangle 12" Padding="14">
           <VerticalStackLayout Spacing="10">
-            <Label Text="Opret fødevare" FontSize="19" FontAttributes="Bold" TextColor="#eef2f1" />
-            <Button Text="Scan stregkode" Clicked="ScanBarcodeClicked" BackgroundColor="#34413b" TextColor="#eef2f1" />
+            <Label Text="Add food" FontSize="19" FontAttributes="Bold" TextColor="#eef2f1" />
+            <Button Text="Scan barcode" Clicked="ScanBarcodeClicked" BackgroundColor="#34413b" TextColor="#eef2f1" />
             <Label x:Name="ScanStatus" TextColor="#9ba9ac" IsVisible="False" />
-            <Label Text="Fødevarens navn *" TextColor="#eef2f1" />
-            <Entry x:Name="NameInput" Placeholder="Fødevarens navn" MaxLength="200" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#101417" />
-            <Label Text="Næringsindhold pr." TextColor="#eef2f1" />
-            <Picker x:Name="UnitInput" Title="Enhed" TextColor="#eef2f1" BackgroundColor="#101417">
+            <Label Text="Food name *" TextColor="#eef2f1" />
+            <Entry x:Name="NameInput" Placeholder="Food name" MaxLength="200" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#101417" />
+            <Label Text="Nutrition per" TextColor="#eef2f1" />
+            <Picker x:Name="UnitInput" Title="Unit" TextColor="#eef2f1" BackgroundColor="#101417">
               <Picker.Items><x:String>100 g</x:String><x:String>100 ml</x:String></Picker.Items>
             </Picker>
             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="6">
-              <Label Grid.Row="0" Grid.Column="0" Text="Kalorier (kcal) *" TextColor="#eef2f1" />
+              <Label Grid.Row="0" Grid.Column="0" Text="Calories (kcal) *" TextColor="#eef2f1" />
               <Label Grid.Row="0" Grid.Column="1" Text="Protein (g) *" TextColor="#eef2f1" />
               <Entry x:Name="KcalInput" Grid.Row="1" Grid.Column="0" Keyboard="Numeric" TextColor="#eef2f1" BackgroundColor="#101417" />
               <Entry x:Name="ProteinInput" Grid.Row="1" Grid.Column="1" Keyboard="Numeric" TextColor="#eef2f1" BackgroundColor="#101417" />
-              <Label Grid.Row="2" Grid.Column="0" Text="Kulhydrat (g) *" TextColor="#eef2f1" />
-              <Label Grid.Row="2" Grid.Column="1" Text="Fedt (g) *" TextColor="#eef2f1" />
+              <Label Grid.Row="2" Grid.Column="0" Text="Carbs (g) *" TextColor="#eef2f1" />
+              <Label Grid.Row="2" Grid.Column="1" Text="Fat (g) *" TextColor="#eef2f1" />
               <Entry x:Name="CarbsInput" Grid.Row="3" Grid.Column="0" Keyboard="Numeric" TextColor="#eef2f1" BackgroundColor="#101417" />
               <Entry x:Name="FatInput" Grid.Row="3" Grid.Column="1" Keyboard="Numeric" TextColor="#eef2f1" BackgroundColor="#101417" />
-              <Label Grid.Row="4" Grid.Column="0" Text="Kostfibre (g)" TextColor="#eef2f1" />
+              <Label Grid.Row="4" Grid.Column="0" Text="Fiber (g)" TextColor="#eef2f1" />
               <Entry x:Name="FiberInput" Grid.Row="5" Grid.Column="0" Keyboard="Numeric" TextColor="#eef2f1" BackgroundColor="#101417" />
             </Grid>
-            <Button Text="Gem fødevare" Clicked="SaveClicked" BackgroundColor="#a6da7e" TextColor="#101417" />
-            <Button Text="Ryd formular" Clicked="ClearClicked" BackgroundColor="#34413b" TextColor="#eef2f1" />
+            <Button Text="Save food" Clicked="SaveClicked" BackgroundColor="#a6da7e" TextColor="#101417" />
+            <Button Text="Clear form" Clicked="ClearClicked" BackgroundColor="#34413b" TextColor="#eef2f1" />
           </VerticalStackLayout>
         </Border>
       </VerticalStackLayout>
       <VerticalStackLayout x:Name="ListPanel" IsVisible="False" Spacing="12">
-        <Entry x:Name="SearchInput" Placeholder="Søg i mine fødevarer" TextChanged="SearchChanged" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#1a2025" />
+        <Entry x:Name="SearchInput" Placeholder="Search saved foods" TextChanged="SearchChanged" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#1a2025" />
         <VerticalStackLayout x:Name="FoodsList" Spacing="8" />
-        <Label x:Name="EmptyLabel" Text="Ingen fødevarer endnu." TextColor="#9ba9ac" />
+        <Label x:Name="EmptyLabel" Text="No saved foods yet." TextColor="#9ba9ac" />
         <Border Stroke="#303a40" BackgroundColor="#1a2025" StrokeShape="RoundRectangle 12" Padding="14">
           <VerticalStackLayout Spacing="10">
-            <Label Text="Overfør til PC" FontSize="18" FontAttributes="Bold" TextColor="#eef2f1" />
-            <Label Text="PC-adresse (samme Wi-Fi)" TextColor="#eef2f1" />
-            <Entry x:Name="PcAddressInput" Placeholder="http://192.168.1.10:5000" Keyboard="Url" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#101417" />
-            <Label Text="Forbindelsesnøgle" TextColor="#eef2f1" />
+            <Label Text="Sync with PC" FontSize="18" FontAttributes="Bold" TextColor="#eef2f1" />
+            <Label Text="PC address (same Wi-Fi)" TextColor="#eef2f1" />
+            <Entry x:Name="PcAddressInput" Placeholder="https://pc.example.com:5443" Keyboard="Url" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#101417" />
+            <Label Text="Sync key" TextColor="#eef2f1" />
             <Entry x:Name="PcSecretInput" IsPassword="True" TextColor="#eef2f1" BackgroundColor="#101417" />
-            <Button x:Name="TransferButton" Text="Overfør ikke-overførte fødevarer" Clicked="TransferClicked" BackgroundColor="#a6da7e" TextColor="#101417" />
+            <Button x:Name="TransferButton" Text="Save sync settings" Clicked="TransferClicked" BackgroundColor="#a6da7e" TextColor="#101417" />
             <Label x:Name="TransferStatus" TextColor="#9ba9ac" />
           </VerticalStackLayout>
         </Border>
