@@ -123,4 +123,39 @@ public sealed class SupabaseProviderTests
             return reply;
         }
     }
+
+    [Test]
+    public async Task CloudTrainingStillLoadsWithMalformedAndMissingImages()
+    {
+        var directory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var handler = new ScriptedHttpHandler(_ => ScriptedHttpHandler.Json(SignedIn),
+                _ => ScriptedHttpHandler.Json("""
+                    {"groups":[{"id":"g","name":"Group","programmes":[{"id":"p","title":"Programme",
+                    "exercises":[{"id":"a","name":"Press","kg":12,"image":{"legacy":true}},
+                                 {"id":"b","name":"Row","kg":15,"image":"/TrainingImages/missing.png"}]}]}]}
+                    """),
+                request =>
+                {
+                    Assert.That(request.RequestUri!.AbsolutePath, Does.EndWith("/missing.png"));
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                });
+            using var http = new HttpClient(handler);
+            var session = new SupabaseSessionService(Config,
+                new SupabaseSessionStorage(new MemorySecureStorage(), Config), http);
+            var cache = new SupabaseTrainingImageCache(Config, session, http, directory.FullName);
+            await session.SignInAsync("owner@example.invalid", "fake-password");
+
+            var state = await new SupabaseTrainingStore(session, cache).ReadAsync();
+            Assert.That(state.Programmes!.Groups[0].Programmes[0].Exercises.Select(exercise => exercise.Kg),
+                Is.EqualTo(new decimal[] { 12, 15 }));
+            Assert.That(state.CloudImages, Is.Empty);
+            Assert.That(handler.Remaining, Is.Zero);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
 }
