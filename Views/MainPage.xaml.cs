@@ -10,22 +10,18 @@ namespace MomentumGroves.Mobile.Views;
 public partial class MainPage : ContentPage
 {
     private readonly LocalFoodService _storage;
-    private readonly SyncService _sync;
     private readonly OpenFoodFactsService _openFoodFacts;
     private List<FoodDto> _foods = new();
     private Guid? _editingId;
-    private bool _initialized;
 
     /// <summary>
     /// Initializes the food entry screen.
     /// </summary>
-    public MainPage(LocalFoodService storage, SyncService sync, OpenFoodFactsService openFoodFacts)
+    public MainPage(LocalFoodService storage, OpenFoodFactsService openFoodFacts)
     {
         InitializeComponent();
         _storage = storage;
-        _sync = sync;
         _openFoodFacts = openFoodFacts;
-        PcAddressInput.Text = _sync.Address;
         UnitInput.SelectedIndex = 0;
     }
 
@@ -36,19 +32,7 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
         await RefreshAsync();
-        if (!_initialized)
-        {
-            try
-            {
-                PcSecretInput.Text = await _sync.GetSecretAsync();
-            }
-            catch (Exception)
-            {
-                TransferStatus.Text = "Couldn't read the sync key. Enter and save it again.";
-            }
 
-            _initialized = true;
-        }
     }
 
     /// <summary>
@@ -330,31 +314,4 @@ public partial class MainPage : ContentPage
         ListTab.TextColor = Colors.White;
     }
 
-    /// <summary>Saves pairing settings for manual sync.</summary>
-    private async void TransferClicked(object sender, EventArgs e)
-    {
-        var address = PcAddressInput.Text?.Trim() ?? "";
-        var secret = PcSecretInput.Text?.Trim() ?? "";
-        if (!SyncService.IsHttpsAddress(address) || secret.Length < 16)
-        {
-            TransferStatus.Text = "Enter your PC's HTTPS address and a sync key of at least 16 characters.";
-            return;
-        }
-
-        TransferButton.IsEnabled = false;
-        try
-        {
-            await _sync.SaveSecretAsync(secret);
-            _sync.Address = address;
-            TransferStatus.Text = "Settings saved. To transfer data, tap Sync to PC on the home screen.";
-        }
-        catch (Exception)
-        {
-            TransferStatus.Text = "Couldn't save the sync settings.";
-        }
-        finally
-        {
-            TransferButton.IsEnabled = true;
-        }
-    }
 }

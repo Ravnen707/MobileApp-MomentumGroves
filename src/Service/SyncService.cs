@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Net.Security;
+using System.Security.Cryptography;
 using MomentumGroves.Mobile.DTO;
 
 namespace MomentumGroves.Mobile.Service;
@@ -7,10 +9,9 @@ namespace MomentumGroves.Mobile.Service;
 public sealed class SyncService
 {
     private readonly LocalFoodService _storage;
-    private readonly HttpClient _client = new(new HttpClientHandler { AllowAutoRedirect = false })
-        { Timeout = TimeSpan.FromSeconds(60) };
     private const string AddressKey = "pc_sync_address";
     private const string SecretKey = "pc_sync_secret";
+    private const string FingerprintKey = "pc_sync_certificate";
 
     public SyncService(LocalFoodService storage)
     {
@@ -21,6 +22,35 @@ public sealed class SyncService
     {
         get => Preferences.Get(AddressKey, "");
         set => Preferences.Set(AddressKey, value.Trim());
+    }
+
+    public string CertificateFingerprint
+    {
+        get => Preferences.Get(FingerprintKey, "");
+        set => Preferences.Set(FingerprintKey, value);
+    }
+
+    public static string NormalizeFingerprint(string input) =>
+        string.Concat(input.Where(character => !char.IsWhiteSpace(character) && character != ':'));
+
+    public HttpClient CreateClient(TimeSpan timeout)
+    {
+        var address = new Uri(Address);
+        var fingerprint = CertificateFingerprint;
+        var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        if (fingerprint.Length > 0)
+        {
+            handler.ServerCertificateCustomValidationCallback = (request, certificate, _, errors) =>
+                request.RequestUri is { } target && target.Scheme == Uri.UriSchemeHttps &&
+                target.IdnHost == address.IdnHost && target.Port == address.Port &&
+                certificate is not null && (errors & ~SslPolicyErrors.RemoteCertificateChainErrors) == 0 &&
+                DateTime.UtcNow >= certificate.NotBefore.ToUniversalTime() &&
+                DateTime.UtcNow <= certificate.NotAfter.ToUniversalTime() &&
+                string.Equals(certificate.GetCertHashString(HashAlgorithmName.SHA256), fingerprint,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        return new HttpClient(handler) { Timeout = timeout };
     }
 
     public async Task<string> GetSecretAsync()
@@ -68,6 +98,7 @@ public sealed class SyncService
 
         var imported = 0;
         var skipped = 0;
+        using var client = CreateClient(TimeSpan.FromSeconds(60));
         foreach (var batch in foods.Chunk(100))
         {
             var payload = batch.Select(food => new FoodSyncDto
@@ -80,7 +111,7 @@ public sealed class SyncService
                 Content = JsonContent.Create(payload)
             };
             request.Headers.Add("X-Momentum-Sync-Key", secret);
-            using var response = await _client.SendAsync(request, token);
+            using var response = await client.SendAsync(request, token);
             if (!response.IsSuccessStatusCode)
             {
                 throw new HttpRequestException(

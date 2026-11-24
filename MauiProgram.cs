@@ -23,6 +23,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<Service.OpenFoodFactsService>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<OfflineTrainingPage>();
+        builder.Services.AddSingleton<PcSyncPage>();
         builder.Services.AddSingleton<HomePage>();
         return builder.Build();
     }

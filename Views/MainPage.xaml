@@ -41,17 +41,6 @@
         <Entry x:Name="SearchInput" Placeholder="Search saved foods" TextChanged="SearchChanged" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#1a2025" />
         <VerticalStackLayout x:Name="FoodsList" Spacing="8" />
         <Label x:Name="EmptyLabel" Text="No saved foods yet." TextColor="#9ba9ac" />
-        <Border Stroke="#303a40" BackgroundColor="#1a2025" StrokeShape="RoundRectangle 12" Padding="14">
-          <VerticalStackLayout Spacing="10">
-            <Label Text="Sync with PC" FontSize="18" FontAttributes="Bold" TextColor="#eef2f1" />
-            <Label Text="PC address (same Wi-Fi)" TextColor="#eef2f1" />
-            <Entry x:Name="PcAddressInput" Placeholder="https://pc.example.com:5443" Keyboard="Url" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#101417" />
-            <Label Text="Sync key" TextColor="#eef2f1" />
-            <Entry x:Name="PcSecretInput" IsPassword="True" TextColor="#eef2f1" BackgroundColor="#101417" />
-            <Button x:Name="TransferButton" Text="Save sync settings" Clicked="TransferClicked" BackgroundColor="#a6da7e" TextColor="#101417" />
-            <Label x:Name="TransferStatus" TextColor="#9ba9ac" />
-          </VerticalStackLayout>
-        </Border>
       </VerticalStackLayout>
     </VerticalStackLayout>
   </ScrollView>

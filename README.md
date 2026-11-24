@@ -52,8 +52,10 @@ To run from Rider, select an Android device or emulator and run the mobile proje
 
 1. Start the updated Momentum Groves web app. Set `MobileSync__Key` in its local environment or ignored `.env` file. Use a private key of at least 16 characters.
 2. Configure the web app to serve HTTPS at an address the phone can reach on your private network. Use a certificate Android trusts, with a name that matches the address you enter. For example, `https://pc.example.com:5443` illustrates the format. Use your actual PC address.
-3. In the mobile app, open **Food → Saved foods**. Enter the PC’s HTTPS address and the same key, then tap **Save sync settings**.
-4. Return to the mobile home screen and tap **Sync to PC**. The first successful training sync downloads your existing programmes.
+3. From the mobile home screen, open **Sync to PC** and enter the PC’s HTTPS address and the same key.
+4. Tap **Sync now** to save the connection settings and start the transfer. The first successful training sync downloads your existing programmes.
+
+For a private, self-signed PC certificate, enter its **SHA-256 fingerprint** on the sync page. Copy the fingerprint directly from the PC that generated the certificate. Leave it blank for a certificate Android already trusts. A dedicated sync listener supports downloads and uploads. Open the full training editor on the PC.
 
 Sync runs once per tap and stops when finished. Opening a screen, saving an item, and changing networks do not start sync. If the PC is unreachable, pending changes stay on the phone for your next tap.
 
@@ -90,8 +92,8 @@ Clearing app storage or uninstalling can remove unsynced changes. The PC stores 
 ### Testing and publishing
 
 1. Save a food and change a downloaded exercise weight with the PC offline. Reopen the app and confirm both changes are still saved.
-2. Start the PC web app, tap **Sync to PC**, and check that the food appears in the food library and the exercise weight updates in Training.
-3. Change a programme on the PC, tap **Sync to PC** on Android, and confirm the update appears on the phone.
+2. Start the PC web app, choose **Sync to PC → Sync now**, and check that the food appears in the food library and the exercise weight updates in Training.
+3. Change a programme on the PC, choose **Sync to PC → Sync now** on Android, and confirm the update appears on the phone.
 4. Try a sync while the PC is off. Confirm that the phone reports the failure and keeps pending changes for the next tap.
 
 Keep real sync keys, `.env` files, signing keys, private databases, exports, and local SDK paths out of Git. The [.gitignore](.gitignore) covers common local files and build output. Use your own release signing credentials when distributing an APK or app bundle. Include only images you have permission to redistribute.
@@ -153,8 +155,10 @@ For at starte appen fra Rider skal du vælge en Android-enhed eller emulator og 
 
 1. Start den opdaterede Momentum Groves-webapp. Angiv `MobileSync__Key` i dens lokale miljø eller i den ignorerede `.env`-fil. Brug en privat nøgle på mindst 16 tegn.
 2. Konfigurér webappen til at lytte på en HTTPS-adresse, som telefonen kan nå på dit private netværk. Brug et certifikat, som Android har tillid til, og hvis navn matcher den adresse, du indtaster. Eksemplet `https://pc.example.com:5443` viser formatet. Brug din pc’s faktiske adresse.
-3. Åbn **Food → Saved foods** i mobilappen. Indtast pc’ens HTTPS-adresse og den samme nøgle, og tryk på **Save sync settings**.
-4. Gå tilbage til mobilappens startside, og tryk på **Sync to PC**. Den første vellykkede træningssynkronisering henter dine eksisterende programmer.
+3. Åbn **Sync to PC** fra mobilappens startside, og indtast pc’ens HTTPS-adresse og den samme nøgle.
+4. Tryk på **Sync now** for at gemme forbindelsesindstillingerne og starte overførslen. Den første vellykkede træningssynkronisering henter dine eksisterende programmer.
+
+Hvis pc’en bruger et privat, selvsigneret certifikat, skal du indtaste dets **SHA-256-fingeraftryk** på synkroniseringssiden. Kopiér fingeraftrykket direkte fra den pc, der oprettede certifikatet. Lad feltet være tomt, hvis Android allerede har tillid til certifikatet. Den særskilte synkroniseringsadresse bruges til at hente og sende data. Åbn den fulde træningseditor på pc’en.
 
 Synkroniseringen kører én gang pr. tryk og stopper, når den er færdig. Åbning af en skærm, lagring af en post og skift af netværk starter ingen synkronisering. Hvis telefonen ikke kan nå pc’en, bliver ventende ændringer på telefonen indtil næste tryk.
 
@@ -191,8 +195,8 @@ Hvis du rydder appens lager eller afinstallerer den, kan du miste ændringer, de
 ### Test og publicering
 
 1. Gem en madvare, og ændr vægten for en downloadet øvelse, mens pc’en er offline. Åbn appen igen, og kontrollér, at begge ændringer stadig er gemt.
-2. Start webappen på pc’en, tryk på **Sync to PC**, og kontrollér, at varen vises i madbiblioteket, og at vægten opdateres under Training.
-3. Ændr et program på pc’en, tryk på **Sync to PC** på Android, og kontrollér, at opdateringen vises på telefonen.
+2. Start webappen på pc’en, vælg **Sync to PC → Sync now**, og kontrollér, at varen vises i madbiblioteket, og at vægten opdateres under Training.
+3. Ændr et program på pc’en, vælg **Sync to PC → Sync now** på Android, og kontrollér, at opdateringen vises på telefonen.
 4. Forsøg at synkronisere, mens pc’en er slukket. Kontrollér, at telefonen viser fejlen og beholder ventende ændringer til næste tryk.
 
 Hold ægte synkroniseringsnøgler, `.env`-filer, signeringsnøgler, private databaser, eksportfiler og lokale SDK-stier ude af Git. [.gitignore](.gitignore) dækker almindelige lokale filer og buildoutput. Brug dine egne release-signeringsnøgler, hvis du distribuerer en APK eller app bundle. Medtag kun billeder, du har tilladelse til at distribuere.

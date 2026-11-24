@@ -74,6 +74,7 @@ public sealed class OfflineTrainingPage : ContentPage
         _state = await _sync.ReadAsync();
         var groups = _state.Programmes?.Groups ?? [];
         _groups.IsVisible = groups.Count > 0;
+        _editor.IsVisible = !_sync.UsesPrivateCertificate;
         _editor.IsEnabled = _sync.IsConfigured;
         _discard.IsVisible = _state.Pending.Any(edit => edit.Status is not null);
         _groups.ItemDisplayBinding = new Binding(nameof(TrainingGroup.Name));
@@ -85,9 +86,9 @@ public sealed class OfflineTrainingPage : ContentPage
     private void ShowStatus(string? message = null)
     {
         var detail = !_sync.IsConfigured
-            ? "To pair Training, open Food → Saved foods and save your PC address and sync key."
+            ? "Open Sync to PC from the home screen to pair and download your programmes."
             : _state.Programmes is null
-                ? "Tap Sync to PC on the home screen to download your programmes."
+                ? "Open Sync to PC from the home screen and tap Sync now to download your programmes."
                 : _state.Programmes.Groups.Count == 0
                     ? "No saved programmes yet. Create one in the full editor."
                     : "Your programmes are saved on this phone.";
@@ -169,7 +170,7 @@ public sealed class OfflineTrainingPage : ContentPage
                     await _sync.SaveWeightAsync(exercise.Id, kg, baseline);
                     _drafts.Remove(exercise.Id);
                     await ReloadAsync();
-                    ShowStatus("Weight saved on this phone. Tap Sync to PC on the home screen to send it.");
+                    ShowStatus("Weight saved on this phone. Open Sync to PC from the home screen to send it.");
                 }
                 catch (Exception)
                 {

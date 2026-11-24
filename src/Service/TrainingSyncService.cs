@@ -10,8 +10,6 @@ public sealed class TrainingSyncService(SyncService connection)
     private readonly SemaphoreSlim _storageGate = new(1, 1);
     private readonly SemaphoreSlim _syncGate = new(1, 1);
     private readonly SemaphoreSlim _imageGate = new(1, 1);
-    private readonly HttpClient _http = new(new HttpClientHandler { AllowAutoRedirect = false })
-        { Timeout = TimeSpan.FromSeconds(12) };
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public sealed record TrainingGroup(string Id, string Name, List<Programme> Programmes);
@@ -26,6 +24,7 @@ public sealed class TrainingSyncService(SyncService connection)
     private sealed record ServerResult(Programmes Programmes, List<WeightResult> Results);
 
     public bool IsConfigured => SyncService.IsHttpsAddress(connection.Address);
+    public bool UsesPrivateCertificate => connection.CertificateFingerprint.Length > 0;
     public Uri EditorAddress => new(new Uri(connection.Address), "/Training/Phone");
 
     public async Task<TrainingState> ReadAsync()
@@ -87,7 +86,8 @@ public sealed class TrainingSyncService(SyncService connection)
 
     public async Task<int> SyncAsync()
     {
-        while (await SyncBatchAsync())
+        using var client = connection.CreateClient(TimeSpan.FromSeconds(12));
+        while (await SyncBatchAsync(client))
         {
             // The API accepts up to 100 queued edits per request.
         }
@@ -98,7 +98,7 @@ public sealed class TrainingSyncService(SyncService connection)
             using var download = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             try
             {
-                await CacheImagesAsync(state.Programmes, download.Token);
+                await CacheImagesAsync(client, state.Programmes, download.Token);
             }
             catch (OperationCanceledException) when (download.IsCancellationRequested)
             {
@@ -112,7 +112,7 @@ public sealed class TrainingSyncService(SyncService connection)
         return state.Pending.Count(edit => edit.Status is not null);
     }
 
-    private async Task<bool> SyncBatchAsync(CancellationToken token = default)
+    private async Task<bool> SyncBatchAsync(HttpClient client, CancellationToken token = default)
     {
         await _syncGate.WaitAsync(token);
         try
@@ -146,7 +146,7 @@ public sealed class TrainingSyncService(SyncService connection)
                 request.Headers.TryAddWithoutValidation("If-None-Match", snapshot.Version);
 
             request.Headers.Add("X-Momentum-Sync-Key", key);
-            using var response = await _http.SendAsync(request, token);
+            using var response = await client.SendAsync(request, token);
             if (response.StatusCode == System.Net.HttpStatusCode.NotModified && sent.Count == 0)
                 return false;
 
@@ -210,7 +210,7 @@ public sealed class TrainingSyncService(SyncService connection)
         return File.Exists(path) ? path : null;
     }
 
-    private async Task CacheImagesAsync(Programmes programmes, CancellationToken token)
+    private async Task CacheImagesAsync(HttpClient client, Programmes programmes, CancellationToken token)
     {
         await _imageGate.WaitAsync(token);
         try
@@ -229,7 +229,7 @@ public sealed class TrainingSyncService(SyncService connection)
                 var temporary = path + ".tmp";
                 try
                 {
-                    using var response = await _http.GetAsync(image, HttpCompletionOption.ResponseHeadersRead, token);
+                    using var response = await client.GetAsync(image, HttpCompletionOption.ResponseHeadersRead, token);
                     if (!response.IsSuccessStatusCode || response.Content.Headers.ContentType?.MediaType is not
                             ("image/jpeg" or "image/png" or "image/webp"))
                         continue;
