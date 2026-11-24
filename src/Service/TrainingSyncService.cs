@@ -210,6 +210,7 @@ public sealed class TrainingSyncService(SyncService connection) : ITrainingStore
         try
         {
             var address = connection.Address;
+            var key = await connection.GetSecretAsync();
             var images = programmes.Groups.SelectMany(group => group.Programmes)
                 .SelectMany(programme => programme.Exercises)
                 .Select(exercise => ImageAddress(address, exercise.Image)).OfType<Uri>().Distinct();
@@ -223,7 +224,10 @@ public sealed class TrainingSyncService(SyncService connection) : ITrainingStore
                 var temporary = path + ".tmp";
                 try
                 {
-                    using var response = await client.GetAsync(image, HttpCompletionOption.ResponseHeadersRead, token);
+                    using var request = new HttpRequestMessage(HttpMethod.Get, image);
+                    if (!string.IsNullOrEmpty(key))
+                        request.Headers.Add("X-Momentum-Sync-Key", key);
+                    using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
                     if (!response.IsSuccessStatusCode || response.Content.Headers.ContentType?.MediaType is not
                             ("image/jpeg" or "image/png" or "image/webp"))
                         continue;

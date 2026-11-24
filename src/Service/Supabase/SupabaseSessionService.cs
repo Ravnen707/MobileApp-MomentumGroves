@@ -51,6 +51,11 @@ internal sealed class SupabaseSessionService(
         }
     }
 
+    public Task<(string Account, string Token)> GetImageSessionAsync() =>
+        UseAsync(client => client.Auth.CurrentSession is { User.Id: { } account, AccessToken: { } token }
+            ? Task.FromResult((account, token))
+            : throw new DataStoreException("Sign in to Supabase in Settings."));
+
     public Task<T> RpcAsync<T>(string name, object parameters) where T : class =>
         UseAsync(async client =>
         {

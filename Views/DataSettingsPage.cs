@@ -29,7 +29,7 @@ public sealed class DataSettingsPage : ContentPage
         _actions.Children.Add(new Label { Text = $"Active data provider: {provider.Name}", TextColor = Colors.White });
         _actions.Children.Add(new Label
         {
-            Text = "The full training editor and uncached PC exercise images require the PC. Manual PC sync is available in standalone mode.",
+            Text = "The full training editor requires the PC. Cloud training refreshes exercise images from Supabase. Manual PC sync is available in standalone mode.",
             TextColor = Colors.White
         });
         _actions.Children.Add(url);

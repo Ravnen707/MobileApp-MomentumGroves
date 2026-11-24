@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http.Headers;
+using static MomentumGroves.Mobile.DTO.TrainingData;
 using MomentumGroves.Mobile.Configuration;
 using MomentumGroves.Mobile.Data;
 using MomentumGroves.Mobile.Data.Supabase;
@@ -68,5 +71,56 @@ public sealed class SupabaseProviderTests
         var error = Assert.ThrowsAsync<DataStoreException>(() => new SupabaseTrainingStore(session).ReadAsync());
 
         Assert.That(error!.Message, Does.Contain("Sign in"));
+    }
+
+    [Test]
+    public async Task ImageRefreshDownloadsReplacementsOnceAndDropsClearedReferences()
+    {
+        var directory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var handler = new ScriptedHttpHandler(_ => ScriptedHttpHandler.Json(SignedIn),
+                request => Picture(request, "first.png"), request => Picture(request, "replacement.png"));
+            using var http = new HttpClient(handler);
+            var session = new SupabaseSessionService(Config,
+                new SupabaseSessionStorage(new MemorySecureStorage(), Config), http);
+            var cache = new SupabaseTrainingImageCache(Config, session, http, directory.FullName);
+            await session.SignInAsync("owner@example.invalid", "fake-password");
+
+            var first = await cache.RefreshAsync(ProgrammeWith("/TrainingImages/first.png"));
+            var repeat = await cache.RefreshAsync(ProgrammeWith("/TrainingImages/first.png"));
+            var replacement = await cache.RefreshAsync(ProgrammeWith("/TrainingImages/replacement.png"));
+            var cleared = await cache.RefreshAsync(ProgrammeWith(null));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(repeat.Values.Single(), Is.EqualTo(first.Values.Single()));
+                Assert.That(replacement.Values.Single(), Is.Not.EqualTo(first.Values.Single()));
+                Assert.That(cleared, Is.Empty);
+                Assert.That(handler.Remaining, Is.Zero);
+            });
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+
+        static Programmes ProgrammeWith(string? reference) =>
+            new([new("group", "Group", [new("programme", "Programme", "",
+                [new("exercise", "Exercise", null, null, 1, "8", 10, 0, reference)])])]);
+
+        static HttpResponseMessage Picture(HttpRequestMessage request, string filename)
+        {
+            Assert.That(request.RequestUri!.AbsolutePath,
+                Is.EqualTo("/storage/v1/object/authenticated/momentum-training-images/" + filename));
+            Assert.That(request.Headers.Authorization?.Parameter, Does.EndWith(".signature"));
+            var reply = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(Convert.FromBase64String(
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6yQAAAAASUVORK5CYII="))
+            };
+            reply.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            return reply;
+        }
     }
 }

@@ -3,12 +3,18 @@ using static MomentumGroves.Mobile.DTO.TrainingData;
 
 namespace MomentumGroves.Mobile.Data.Supabase;
 
-internal sealed class SupabaseTrainingStore(SupabaseSessionService session) : ITrainingStore
+internal sealed class SupabaseTrainingStore(SupabaseSessionService session, SupabaseTrainingImageCache? images = null) : ITrainingStore
 {
     private sealed record WeightOutcome(string Status, decimal? Kg);
 
-    public async Task<TrainingState> ReadAsync() =>
-        new(await session.RpcAsync<Programmes>("mobile_training", new { }), []);
+    public async Task<TrainingState> ReadAsync()
+    {
+        var programmes = await session.RpcAsync<Programmes>("mobile_training", new { });
+        return new(programmes, [])
+        {
+            CloudImages = images is null ? null : await images.RefreshAsync(programmes)
+        };
+    }
 
     public async Task SaveWeightAsync(string exerciseId, decimal kg, decimal baseline)
     {

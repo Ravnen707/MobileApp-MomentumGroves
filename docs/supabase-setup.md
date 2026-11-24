@@ -58,7 +58,7 @@ Install or update the app with your usual deploy method. Open **Settings**, ente
 
 - **Food** reads and updates the shared custom food library. Barcode lookup still reaches Open Food Facts.
 - **Training** reads shared programmes and saves weights. Explicit refresh and opening the screen fetch the latest cloud data. A conflict means another client changed the weight. Refresh to review the stored value before saving again.
-- The full training editor and standalone PC synchronisation require the PC. In cloud mode, use **PC settings** to configure the editor address. Training can show previously cached PC images. Use standalone PC sync to download images to the mobile cache, or view them in the full editor while the PC is on.
+- The full training editor and standalone PC synchronisation require the PC. In cloud mode, use **PC settings** to configure the editor address. For images that load with the PC off, follow the [private exercise image Storage setup](training-image-storage.md). Standalone PC sync continues downloading images to the mobile cache.
 - If Supabase is unavailable, the app reports the error. To return to your saved local foods, pending training edits and PC sync, select **Use standalone after restart**, force stop the app from Android's **App info** screen, then reopen it. Switching modes does not upload existing local data.
 
 ## 4. Verify

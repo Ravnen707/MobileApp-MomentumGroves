@@ -152,7 +152,10 @@ public sealed class OfflineTrainingPage : ContentPage
         var cardio = exercise.Type == "cardio";
         var content = new VerticalStackLayout { Spacing = 6 };
         content.Children.Add(Text(exercise.Name, 17));
-        if (_sync.CachedImage(exercise.Image) is { } image)
+        var cachedImage = exercise.Image is { } reference
+            ? _state.CloudImages?.GetValueOrDefault(reference) ?? _sync.CachedImage(reference)
+            : null;
+        if (cachedImage is { } image)
             content.Children.Add(new Image { Source = ImageSource.FromFile(image), HeightRequest = 140, Aspect = Aspect.AspectFit });
         content.Children.Add(Text(cardio ? $"{exercise.Minutes} min" : $"{exercise.Sets} sets · {exercise.Reps} reps",
             color: "#9ba9ac"));

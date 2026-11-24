@@ -9,5 +9,9 @@ public static class TrainingData
     public sealed record Programmes(List<TrainingGroup> Groups);
     public sealed record WeightEdit(Guid ChangeId, string ExerciseId, decimal BaseKg, decimal Kg,
         string? Status = null);
-    public sealed record TrainingState(Programmes? Programmes, List<WeightEdit> Pending, string? Version = null);
+    public sealed record TrainingState(Programmes? Programmes, List<WeightEdit> Pending, string? Version = null)
+    {
+        [System.Text.Json.Serialization.JsonIgnore]
+        public IReadOnlyDictionary<string, string>? CloudImages { get; init; }
+    }
 }

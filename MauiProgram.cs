@@ -40,6 +40,10 @@ public static class MauiProgram
             });
             builder.Services.AddSingleton<SupabaseSessionStorage>();
             builder.Services.AddSingleton<SupabaseSessionService>();
+            builder.Services.AddSingleton(services => new SupabaseTrainingImageCache(
+                services.GetRequiredService<SupabaseConfiguration>(),
+                services.GetRequiredService<SupabaseSessionService>(),
+                services.GetRequiredService<HttpClient>(), FileSystem.CacheDirectory));
             builder.Services.AddSingleton<IFoodStore, SupabaseFoodStore>();
             builder.Services.AddSingleton<ITrainingStore, SupabaseTrainingStore>();
         }

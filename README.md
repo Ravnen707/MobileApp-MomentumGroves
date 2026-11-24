@@ -66,7 +66,7 @@ The phone’s `localhost` points to the phone itself. If the PC web app listens 
 
 The default **Standalone (local JSON)** provider works without a Supabase account. It keeps pending foods and downloaded programmes on the phone and uses manual PC sync when paired. Open **Settings** to see the active provider.
 
-Choose Supabase to read and update the shared food library and training weights while the PC is off. The full training editor, uncached PC-hosted training images and standalone PC sync still require the PC. The web app keeps its local Frida database. Switching providers preserves the standalone files and pending changes. Follow the [Supabase setup guide](docs/supabase-setup.md) for the web, dashboard and mobile steps.
+Choose Supabase to read and update the shared food library and training weights while the PC is off. The full training editor and standalone PC sync still require the PC. [Optional exercise image Storage](docs/training-image-storage.md) makes training images available in cloud mode while the PC is off. The web app keeps its local Frida database. Switching providers preserves the standalone files and pending changes. Follow the [Supabase setup guide](docs/supabase-setup.md) for the web, dashboard and mobile steps.
 
 ### Using the app
 
@@ -178,7 +178,7 @@ Telefonens `localhost` peger på selve telefonen. Hvis webappen kun lytter på p
 
 ### Valgfri Supabase
 
-Standardtilstanden gemmer dine data som lokale JSON-filer og kr?ver ingen Supabase-konto. Under **Settings** kan du se den aktive datakilde. Med Supabase kan du l?se og ?ndre f?lles madvarer og tr?ningsv?gte, mens pc?en er slukket. Programeditoren, ?velsesbilleder der endnu ikke er hentet, og manuel pc-synkronisering kr?ver stadig pc?en. Frida ligger fortsat lokalt p? pc?en. Dine lokale filer og ventende ?ndringer bevares, n?r du skifter tilstand. Se [ops?tningsvejledningen](docs/supabase-setup.md).
+Standardtilstanden gemmer dine data som lokale JSON-filer og kr?ver ingen Supabase-konto. Under **Settings** kan du se den aktive datakilde. Med Supabase kan du l?se og ?ndre f?lles madvarer og tr?ningsv?gte, mens pc?en er slukket. Programeditoren og manuel pc-synkronisering kr?ver stadig pc?en. [Valgfri billedlagring i Supabase](docs/training-image-storage.md) g?r ?velsesbilleder tilg?ngelige i cloud-tilstand, mens pc?en er slukket. Frida ligger fortsat lokalt p? pc?en. Dine lokale filer og ventende ?ndringer bevares, n?r du skifter tilstand. Se [ops?tningsvejledningen](docs/supabase-setup.md).
 
 ### Brug af appen
 
