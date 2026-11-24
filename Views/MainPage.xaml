@@ -38,6 +38,7 @@
         </Border>
       </VerticalStackLayout>
       <VerticalStackLayout x:Name="ListPanel" IsVisible="False" Spacing="12">
+        <Button Text="Refresh foods" Clicked="RefreshClicked" />
         <Entry x:Name="SearchInput" Placeholder="Search saved foods" TextChanged="SearchChanged" TextColor="#eef2f1" PlaceholderColor="#9ba9ac" BackgroundColor="#1a2025" />
         <VerticalStackLayout x:Name="FoodsList" Spacing="8" />
         <Label x:Name="EmptyLabel" Text="No saved foods yet." TextColor="#9ba9ac" />

@@ -1,4 +1,5 @@
 using System.Net;
+using MomentumGroves.Mobile.Configuration;
 using MomentumGroves.Mobile.Service;
 
 namespace MomentumGroves.Mobile.Views;
@@ -19,12 +20,17 @@ public sealed class PcSyncPage : ContentPage
     };
     private readonly Label _status = new() { TextColor = Color.FromArgb("#9ba9ac") };
     private bool _busy;
+    private readonly bool _canSync;
 
-    public PcSyncPage(SyncService foodSync, TrainingSyncService trainingSync)
+    public PcSyncPage(SyncService foodSync, TrainingSyncService trainingSync, DataProvider provider)
     {
         _foodSync = foodSync;
         _trainingSync = trainingSync;
-        Title = "Sync to PC";
+        _canSync = !provider.IsCloud;
+        Title = _canSync ? "Sync to PC" : "PC settings";
+        if (!_canSync)
+            _sync.Text = "Save PC settings";
+        _key.IsVisible = _canSync;
         BackgroundColor = Color.FromArgb("#101417");
         SemanticProperties.SetDescription(_address, "PC HTTPS address");
         SemanticProperties.SetDescription(_key, "Sync key");
@@ -38,7 +44,7 @@ public sealed class PcSyncPage : ContentPage
                 Children =
                 {
                     new Label { Text = "PC HTTPS address", TextColor = Colors.White }, _address,
-                    new Label { Text = "Sync key", TextColor = Colors.White }, _key,
+                    new Label { Text = "Sync key", TextColor = Colors.White, IsVisible = _canSync }, _key,
                     new Label { Text = "Certificate fingerprint (for a private certificate)", TextColor = Colors.White },
                     _fingerprint, _sync, _status
                 }
@@ -53,6 +59,9 @@ public sealed class PcSyncPage : ContentPage
         _fingerprint.Text = _foodSync.CertificateFingerprint;
         _key.Text = "";
         _status.Text = "";
+        if (!_canSync)
+            return;
+
         _key.IsEnabled = _sync.IsEnabled = false;
         try
         {
@@ -75,9 +84,11 @@ public sealed class PcSyncPage : ContentPage
         var address = _address.Text?.Trim() ?? "";
         var key = _key.Text?.Trim() ?? "";
         var fingerprint = SyncService.NormalizeFingerprint(_fingerprint.Text ?? "");
-        if (!SyncService.IsHttpsAddress(address) || key.Length < 16)
+        if (!SyncService.IsHttpsAddress(address) || (_canSync && key.Length < 16))
         {
-            _status.Text = "Enter your PC's HTTPS address and a sync key of at least 16 characters.";
+            _status.Text = _canSync
+                ? "Enter your PC's HTTPS address and a sync key of at least 16 characters."
+                : "Enter your PC's HTTPS address.";
             return;
         }
 
@@ -93,9 +104,16 @@ public sealed class PcSyncPage : ContentPage
         _status.Text = "Syncing with the PC…";
         try
         {
-            await _foodSync.SaveSecretAsync(key);
+            if (_canSync)
+                await _foodSync.SaveSecretAsync(key);
             _foodSync.Address = address;
             _foodSync.CertificateFingerprint = fingerprint;
+            if (!_canSync)
+            {
+                _status.Text = "Saved. The full editor still requires the PC to be online.";
+                return;
+            }
+
             var results = await Task.WhenAll(
                 SyncSectionAsync("Food", async () =>
                 {

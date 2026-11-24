@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/MomentumGroves.Mobile.Tests/MomentumGroves.Mobile.Tests.csproj" />
+  </Folder>
+  <Project Path="MomentumGroves.Mobile.csproj" />
+</Solution>

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+        <PackageReference Include="NUnit" Version="4.3.2" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+        <PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.100" />
+        <PackageReference Include="Supabase" Version="8.14.0" />
+        <Using Include="NUnit.Framework" />
+        <Using Include="Microsoft.Maui.Storage" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Link production sources so these tests can run without Android. -->
+        <Compile Include="../../DTO/FoodDto.cs;../../DTO/TrainingData.cs" LinkBase="Application/DTO" />
+        <Compile Include="../../src/Configuration/*.cs" LinkBase="Application/Configuration" />
+        <Compile Include="../../src/Data/*.cs" LinkBase="Application/Data" />
+        <Compile Include="../../src/Data/Local/*.cs" LinkBase="Application/Data/Local" />
+        <Compile Include="../../src/Data/Supabase/*.cs" LinkBase="Application/Data/Supabase" />
+        <Compile Include="../../src/Infrastructure/Supabase/*.cs" LinkBase="Application/Infrastructure/Supabase" />
+        <Compile Include="../../src/Service/Supabase/SupabaseSessionService.cs" LinkBase="Application/Service/Supabase" />
+    </ItemGroup>
+</Project>

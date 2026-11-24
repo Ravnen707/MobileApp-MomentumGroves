@@ -1,12 +1,16 @@
 using System.Globalization;
+using MomentumGroves.Mobile.Configuration;
+using MomentumGroves.Mobile.Data;
 using MomentumGroves.Mobile.Service;
-using static MomentumGroves.Mobile.Service.TrainingSyncService;
+using static MomentumGroves.Mobile.DTO.TrainingData;
 
 namespace MomentumGroves.Mobile.Views;
 
 public sealed class OfflineTrainingPage : ContentPage
 {
     private readonly TrainingSyncService _sync;
+    private readonly ITrainingStore _store;
+    private readonly DataProvider _provider;
     private readonly Picker _groups = new() { Title = "Programme group", TextColor = Colors.White };
     private readonly VerticalStackLayout _programmes = new() { Spacing = 12 };
     private readonly Label _status = Text("", color: "#9ba9ac");
@@ -15,9 +19,13 @@ public sealed class OfflineTrainingPage : ContentPage
     private readonly Dictionary<string, (string Text, decimal BaseKg)> _drafts = new();
     private TrainingState _state = new(null, []);
 
-    public OfflineTrainingPage(TrainingSyncService sync)
+    public OfflineTrainingPage(TrainingSyncService sync, ITrainingStore store, DataProvider provider)
     {
         _sync = sync;
+        _store = store;
+        _provider = provider;
+        var refresh = Action("Refresh programmes");
+        refresh.Clicked += async (_, _) => await RefreshAsync(reviewDrafts: true);
         Title = "Training";
         BackgroundColor = Color.FromArgb("#101417");
         _groups.SelectedIndexChanged += (_, _) => ShowGroup();
@@ -29,7 +37,7 @@ public sealed class OfflineTrainingPage : ContentPage
 
             try
             {
-                await _sync.DiscardConflictsAsync();
+                await _store.DiscardConflictsAsync();
                 await ReloadAsync();
                 ShowStatus();
             }
@@ -49,7 +57,7 @@ public sealed class OfflineTrainingPage : ContentPage
             Content = new VerticalStackLayout
             {
                 Padding = 16, Spacing = 12,
-                Children = { Text("Training programmes", 24), _status, _groups, _programmes, _discard, _editor }
+                Children = { Text("Training programmes", 24), _status, refresh, _groups, _programmes, _discard, _editor }
             }
         };
     }
@@ -57,22 +65,38 @@ public sealed class OfflineTrainingPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync(bool reviewDrafts = false)
+    {
         try
         {
-            await ReloadAsync();
+            await ReloadAsync(reviewDrafts);
             ShowStatus();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            _status.Text = "Couldn't load training data saved on this phone.";
+            _groups.ItemsSource = null;
+            _programmes.Children.Clear();
+            _discard.IsVisible = false;
+            _status.Text = exception is DataStoreException ? exception.Message : "Couldn't load training data.";
         }
     }
 
-    private async Task ReloadAsync()
+    private async Task ReloadAsync(bool reviewDrafts = false)
     {
         var selection = (_groups.SelectedItem as TrainingGroup)?.Id;
-        _state = await _sync.ReadAsync();
+        _state = await _store.ReadAsync();
         var groups = _state.Programmes?.Groups ?? [];
+        if (reviewDrafts)
+        {
+            foreach (var exercise in groups.SelectMany(group => group.Programmes).SelectMany(programme => programme.Exercises))
+            {
+                if (_drafts.TryGetValue(exercise.Id, out var draft))
+                    _drafts[exercise.Id] = (draft.Text, exercise.Kg);
+            }
+        }
         _groups.IsVisible = groups.Count > 0;
         _editor.IsVisible = !_sync.UsesPrivateCertificate;
         _editor.IsEnabled = _sync.IsConfigured;
@@ -85,7 +109,9 @@ public sealed class OfflineTrainingPage : ContentPage
 
     private void ShowStatus(string? message = null)
     {
-        var detail = !_sync.IsConfigured
+        var detail = _provider.IsCloud
+            ? "Shared training programmes. The full editor still requires the PC."
+            : !_sync.IsConfigured
             ? "Open Sync to PC from the home screen to pair and download your programmes."
             : _state.Programmes is null
                 ? "Open Sync to PC from the home screen and tap Sync now to download your programmes."
@@ -152,6 +178,8 @@ public sealed class OfflineTrainingPage : ContentPage
             var save = Action(edit?.Status == "conflict" ? "Save this weight" : "Save weight");
             if (edit?.Status == "conflict")
                 content.Children.Add(Text($"PC weight: {exercise.Kg} kg. Save this weight to replace it.", color: "#ecd08c"));
+            else if (_provider.IsCloud && _drafts.ContainsKey(exercise.Id))
+                content.Children.Add(Text($"Saved weight: {exercise.Kg} kg", color: "#ecd08c"));
 
             save.Clicked += async (_, _) =>
             {
@@ -167,10 +195,14 @@ public sealed class OfflineTrainingPage : ContentPage
                 {
                     var baseline = edit?.Status != "conflict" && _drafts.TryGetValue(exercise.Id, out var input)
                         ? input.BaseKg : exercise.Kg;
-                    await _sync.SaveWeightAsync(exercise.Id, kg, baseline);
+                    await _store.SaveWeightAsync(exercise.Id, kg, baseline);
                     _drafts.Remove(exercise.Id);
                     await ReloadAsync();
-                    ShowStatus("Weight saved on this phone. Open Sync to PC from the home screen to send it.");
+                    ShowStatus(_provider.TrainingSaved);
+                }
+                catch (DataStoreException exception)
+                {
+                    _status.Text = exception.Message;
                 }
                 catch (Exception)
                 {

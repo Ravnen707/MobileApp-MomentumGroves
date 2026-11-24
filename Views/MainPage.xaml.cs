@@ -1,4 +1,6 @@
 using System.Globalization;
+using MomentumGroves.Mobile.Configuration;
+using MomentumGroves.Mobile.Data;
 using MomentumGroves.Mobile.Service;
 using MomentumGroves.Mobile.DTO;
 
@@ -9,18 +11,22 @@ namespace MomentumGroves.Mobile.Views;
 /// </summary>
 public partial class MainPage : ContentPage
 {
-    private readonly LocalFoodService _storage;
+    private readonly IFoodStore _storage;
+    private readonly DataProvider _provider;
     private readonly OpenFoodFactsService _openFoodFacts;
     private List<FoodDto> _foods = new();
-    private Guid? _editingId;
+    private FoodDto? _editing;
+    private Guid _requestId = Guid.NewGuid();
+    private bool _saving;
 
     /// <summary>
     /// Initializes the food entry screen.
     /// </summary>
-    public MainPage(LocalFoodService storage, OpenFoodFactsService openFoodFacts)
+    public MainPage(IFoodStore storage, OpenFoodFactsService openFoodFacts, DataProvider provider)
     {
         InitializeComponent();
         _storage = storage;
+        _provider = provider;
         _openFoodFacts = openFoodFacts;
         UnitInput.SelectedIndex = 0;
     }
@@ -62,7 +68,8 @@ public partial class MainPage : ContentPage
                     return;
                 }
 
-                _editingId = null;
+                _editing = null;
+                _requestId = Guid.NewGuid();
                 NameInput.Text = product.Name;
                 UnitInput.SelectedIndex = product.Unit == "ml" ? 1 : 0;
                 KcalInput.Text = product.Kcal.ToString(CultureInfo.InvariantCulture);
@@ -85,6 +92,9 @@ public partial class MainPage : ContentPage
     /// </summary>
     private async void SaveClicked(object sender, EventArgs e)
     {
+        if (_saving)
+            return;
+
         if (string.IsNullOrWhiteSpace(NameInput.Text))
         {
             await DisplayAlert("Missing name", "Enter the food name.", "OK");
@@ -113,7 +123,9 @@ public partial class MainPage : ContentPage
 
         var food = new FoodDto
         {
-            Id = _editingId ?? Guid.NewGuid(),
+            Id = _editing?.Id ?? _requestId,
+            CloudId = _editing?.CloudId,
+            CloudVersion = _editing?.CloudVersion,
             Name = NameInput.Text.Trim(),
             Unit = UnitInput.SelectedIndex == 1 ? "ml" : "g",
             Kcal = kcal,
@@ -122,15 +134,20 @@ public partial class MainPage : ContentPage
             Fat = fat,
             Fiber = fiber
         };
+        _saving = true;
         try
         {
             await _storage.SaveAsync(food);
             ClearForm();
             await RefreshAsync();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            await DisplayAlert("Error", "Couldn't save the food on this phone.", "OK");
+            await DisplayAlert("Error", exception is DataStoreException ? exception.Message : "Couldn't save the food.", "OK");
+        }
+        finally
+        {
+            _saving = false;
         }
     }
 
@@ -158,7 +175,8 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void ClearForm()
     {
-        _editingId = null;
+        _editing = null;
+        _requestId = Guid.NewGuid();
         NameInput.Text = string.Empty;
         UnitInput.SelectedIndex = 0;
         KcalInput.Text = string.Empty;
@@ -184,14 +202,16 @@ public partial class MainPage : ContentPage
         try
         {
             _foods = await _storage.GetFoodsAsync();
-            if (_editingId is Guid id && _foods.All(food => food.Id != id))
+            if (_editing is { CloudId: null } editing && _foods.All(food => food.Id != editing.Id))
                 ClearForm();
 
             RenderFoods();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            await DisplayAlert("Error", "Couldn't load saved foods.", "OK");
+            _foods.Clear();
+            RenderFoods();
+            await DisplayAlert("Error", exception is DataStoreException ? exception.Message : "Couldn't load saved foods.", "OK");
         }
     }
 
@@ -252,7 +272,7 @@ public partial class MainPage : ContentPage
     /// </summary>
     private void EditFood(FoodDto food)
     {
-        _editingId = food.Id;
+        _editing = food;
         NameInput.Text = food.Name;
         UnitInput.SelectedIndex = food.Unit == "ml" ? 1 : 0;
         KcalInput.Text = food.Kcal.ToString(CultureInfo.InvariantCulture);
@@ -275,17 +295,17 @@ public partial class MainPage : ContentPage
 
         try
         {
-            await _storage.DeleteAsync(food.Id);
-            if (_editingId == food.Id)
+            await _storage.DeleteAsync(food);
+            if (_editing?.Id == food.Id)
             {
                 ClearForm();
             }
 
             await RefreshAsync();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            await DisplayAlert("Error", "Couldn't delete the food.", "OK");
+            await DisplayAlert("Error", exception is DataStoreException ? exception.Message : "Couldn't delete the food.", "OK");
         }
     }
 
@@ -303,6 +323,8 @@ public partial class MainPage : ContentPage
         ListTab.TextColor = Color.FromArgb("#101417");
         RenderFoods();
     }
+
+    private async void RefreshClicked(object sender, EventArgs e) => await RefreshAsync();
 
     private void ShowCreate()
     {
